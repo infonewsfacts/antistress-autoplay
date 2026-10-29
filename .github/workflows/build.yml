@@ -1,0 +1,31 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Sabse nayi zip kholo
+        run: |
+          Z=$(for f in *.zip; do echo "$(git log -1 --format=%ct -- "$f") $f"; done | sort -n | tail -1 | cut -d' ' -f2-)
+          echo "Using zip: $Z"
+          rm -rf AntiStressAutoPlay
+          unzip -q -o "$Z"
+          grep -m1 versionName AntiStressAutoPlay/app/build.gradle.kts
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+      - run: gradle assembleDebug --no-daemon
+        working-directory: AntiStressAutoPlay
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AntiStressAutoPlay-apk
+          path: AntiStressAutoPlay/app/build/outputs/apk/debug/app-debug.apk
